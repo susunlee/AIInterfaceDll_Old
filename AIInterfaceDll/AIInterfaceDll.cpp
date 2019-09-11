@@ -33,7 +33,7 @@ int GetNGCount(CString f_name)
 
 	file.Close();
 
-	return items - 11;
+	return items - 11;		// csv 파일의 헤더(?) 11 라인 이후부터 NG 정보 (라인 하나가 하나의 NG에 대한 정보임)
 }
 
 void DrawRawDataIntoDC(CDC* pDC, BYTE* pViewImg, int x, int y, int width, int height, int bitCount)
@@ -227,7 +227,7 @@ int ProcAI(_NG_FILE_INFO *ni, CString src_csv, CString target_scan, CString targ
 			CString temp_path = path_scan;
 
 			msg.Format(_T("defect_image\\[%05d] "), i + 1);
-			temp_path.Insert(m_strPath.GetLength() + 1, msg);
+			temp_path.Insert(g_hProc.m_strPath.GetLength() + 1, msg);
 			temp_path.Replace(_T(".jpg"), _T(".raw"));
 
 			CT2CA szPath(temp_path, CP_ACP);
@@ -303,32 +303,30 @@ void UpdateCSV(_NG_FILE_INFO *ni)
 	file_new.Close();
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////////
 
-extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
+DWORD CALLBACK ProcThread(LPVOID pParam)
 {
+	PROC_HANDLE *ph = (PROC_HANDLE*)pParam;
+
 	CFileFind ff;
 	CString csv_path, temp;
 	BOOL is_ok = FALSE;
 	int ng_count = 0;
 	int ret = 1;
 
-	for (POSITION pos = m_listNG.GetHeadPosition(); pos != NULL;)
+	for (POSITION pos = g_hProc.m_listNG.GetHeadPosition(); pos != NULL;)
 	{
-		_NG_FILE_INFO *p = (_NG_FILE_INFO*)m_listNG.GetNext(pos);
+		_NG_FILE_INFO *p = (_NG_FILE_INFO*)ph->m_listNG.GetNext(pos);
 
 		delete p;
 	}
 
-	m_listNG.RemoveAll();
+	g_hProc.m_listNG.RemoveAll();
 
-	m_strPath = CA2CT((char*)ng_path);
-	if (m_strPath.GetAt(m_strPath.GetLength() - 1) == _T('\\'))
-	{
-		m_strPath.Delete(m_strPath.GetLength() - 1);
-	}
 
-	csv_path.Format(_T("%s\\*.csv"), m_strPath);
+	csv_path.Format(_T("%s\\*.csv"), ph->m_strPath);
 	is_ok = ff.FindFile(csv_path);
 
 
@@ -343,7 +341,7 @@ extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
 			ni->ng_items = GetNGCount(ff.GetFilePath());
 			ni->image_path = ff.GetFilePath();
 
-			m_listNG.AddTail(ni);
+			ph->m_listNG.AddTail(ni);
 
 			ng_count += ni->ng_items;
 		}
@@ -353,15 +351,15 @@ extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
 	{
 		if (SHOW_IMAGE)
 		{
-			temp.Format(_T("%s\\defect_image"), m_strPath);
+			temp.Format(_T("%s\\defect_image"), ph->m_strPath);
 			CreateDirectory(temp, NULL);
-			temp.Format(_T("%s\\master_image"), m_strPath);
+			temp.Format(_T("%s\\master_image"), ph->m_strPath);
 			CreateDirectory(temp, NULL);
 		}
 
-		for (POSITION pos = m_listNG.GetHeadPosition(); pos != NULL;)
+		for (POSITION pos = ph->m_listNG.GetHeadPosition(); pos != NULL;)
 		{
-			_NG_FILE_INFO *ni = (_NG_FILE_INFO*)m_listNG.GetNext(pos);
+			_NG_FILE_INFO *ni = (_NG_FILE_INFO*)ph->m_listNG.GetNext(pos);
 
 			if (ProcAI(ni, _T(".csv"), _T("_defect.jpg"), _T("_master.jpg")) == 1)
 			{
@@ -373,15 +371,41 @@ extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
 			}
 		}
 
-		for (POSITION pos = m_listNG.GetHeadPosition(); pos != NULL;)
+		for (POSITION pos = ph->m_listNG.GetHeadPosition(); pos != NULL;)
 		{
-			_NG_FILE_INFO *p = (_NG_FILE_INFO*)m_listNG.GetNext(pos);
+			_NG_FILE_INFO *p = (_NG_FILE_INFO*)ph->m_listNG.GetNext(pos);
 
 			delete p;
 		}
 
-		m_listNG.RemoveAll();
+		ph->m_listNG.RemoveAll();
 	}
 
-	return ret;
+
+	return 1;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////
+
+extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
+{
+	g_hProc.m_strPath = CA2CT((char*)ng_path);
+
+	if (g_hProc.m_strPath.GetAt(g_hProc.m_strPath.GetLength() - 1) == _T('\\'))
+	{
+		g_hProc.m_strPath.Delete(g_hProc.m_strPath.GetLength() - 1);
+	}
+
+	HANDLE h = CreateThread(NULL, 0, ProcThread, &g_hProc, 0, NULL);
+
+	DWORD dw = WaitForSingleObject(h, INFINITE); //
+	if (dw == WAIT_FAILED)
+	{
+		//puts("thread error");
+		//return 0;
+	}
+
+
+	return 1;
 }

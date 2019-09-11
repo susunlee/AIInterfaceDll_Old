@@ -11,15 +11,15 @@ struct _NG_FILE_INFO
 	CStringArray	ai_result;
 };
 
-//m_ctlList.InsertColumn(0, _T("번호"), LVCFMT_CENTER, 100);
-//m_ctlList.InsertColumn(1, _T("파일명"), LVCFMT_CENTER, r.Width() - 450);
-//m_ctlList.InsertColumn(2, _T("NG 갯수"), LVCFMT_CENTER, 150);
-//m_ctlList.InsertColumn(3, _T("변환결과"), LVCFMT_CENTER, 150);
-//m_ctlList.InsertColumn(4, _T("파일경로"), LVCFMT_CENTER, 0);
 
+typedef struct _PROC_HANDLE
+{
+	CString		m_strPath;
+	CPtrList	m_listNG;
 
-CString		m_strPath;
-CPtrList	m_listNG;
+} PROC_HANDLE;
+
+PROC_HANDLE		g_hProc;
 
 ////////////////////////////////////////////////////////////
 
