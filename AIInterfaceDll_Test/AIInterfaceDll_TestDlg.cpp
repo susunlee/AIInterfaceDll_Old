@@ -198,8 +198,16 @@ void CAIInterfaceDllTestDlg::OnBnClickedButton1()
 
 void CAIInterfaceDllTestDlg::OnBnClickedOk()
 {
+	UpdateData();
+
+	if (m_strPath.GetLength() < 1)
+	{
+		AfxMessageBox(_T("Empty folder path !!!"));
+		return;
+	}
+
 	char path[1024] = { 0, };
-	Uni2Ansi(m_strPath, path, m_strPath.GetLength());
+	Uni2Ansi(m_strPath, path, m_strPath.GetLength() * 2);
 
 	if (GetAIResult((BYTE*)path) == 1)
 	{

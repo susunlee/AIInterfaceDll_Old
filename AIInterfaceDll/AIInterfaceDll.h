@@ -14,6 +14,7 @@ struct _NG_FILE_INFO
 
 typedef struct _PROC_HANDLE
 {
+	int			g_nShowImage;
 	CString		m_strPath;
 	CPtrList	m_listNG;
 

@@ -11,7 +11,7 @@
 
 #define DLLEXPORT
 
-#define	SHOW_IMAGE					0
+
 
 int GetNGCount(CString f_name)
 {
@@ -84,8 +84,8 @@ void DrawRawDataIntoDC(CDC* pDC, BYTE* pViewImg, int x, int y, int width, int he
 		memDC.CreateCompatibleDC(pDC);
 		bitMap.CreateCompatibleBitmap(pDC, width, height);
 		pOldBitmap = (CBitmap*)memDC.SelectObject(&bitMap);
-		memDC.SelectObject(&bitMap);
-		memDC.FillSolidRect(&rect, RGB(255, 255, 255));
+		//memDC.SelectObject(&bitMap);
+		//memDC.FillSolidRect(&rect, RGB(255, 255, 255));
 
 		// image 역상
 
@@ -227,7 +227,7 @@ int ProcAI(_NG_FILE_INFO *ni, CString src_csv, CString target_scan, CString targ
 		//
 		//////////////////////////////////////////////////////////////////////
 
-		if (SHOW_IMAGE)
+		if (g_hProc.g_nShowImage)
 		{
 			CString temp_path = path_scan;
 
@@ -266,7 +266,7 @@ int ProcAI(_NG_FILE_INFO *ni, CString src_csv, CString target_scan, CString targ
 void UpdateCSV(_NG_FILE_INFO *ni)
 {
 	int items = 0, ai_result_index = 0;
-	CString temp;
+	CString temp, msg;
 	CFileStatus fs_old;
 	temp.Format(_T("%s.old"), ni->image_path);
 	if (CFile::GetStatus(temp, fs_old) == TRUE)
@@ -283,20 +283,47 @@ void UpdateCSV(_NG_FILE_INFO *ni)
 	{
 		if (file_old.ReadString(temp))
 		{
-			if (10 < items)
+			if (10 < items)							// csv 파일의 11번 라인부터 NG 정보
 			{
-				int index = temp.ReverseFind(_T(','));
+				//int index = temp.ReverseFind(_T(','));
+				int index1 = 0, index2 = 0, comma_cnt = 0;
+				int temp_len = temp.GetLength();
 
-				temp = temp.Left(index + 1);
+				for (index1 = 0; index1 < temp_len; index1++)
+				{
+					if (temp.GetAt(index1) == _T(','))
+					{
+						comma_cnt++;
+						if (comma_cnt == 12)		// 13 컬럼에 AI 결과 저장
+						{
+							break;
+						}
+					}
+				}
 
-				temp += ni->ai_result.GetAt(ai_result_index++);
+				index2 = temp.Find(_T(','), index1 + 1);
+
+				msg = temp.Left(index1 + 1);
+
+				msg += ni->ai_result.GetAt(ai_result_index++);
+
+				if (index1 < index2)
+				{
+					msg += temp.Mid(index2);
+				}
+			}
+			else
+			{
+				msg = temp;
 			}
 
-			temp += _T("\n");
+			msg += _T("\n");
 
-			file_new.WriteString(temp);
+			file_new.WriteString(msg);
 
 			items++;
+
+			msg.Empty();
 		}
 		else
 		{
@@ -354,7 +381,7 @@ DWORD CALLBACK ProcThread(LPVOID pParam)
 
 	if (0 < ng_count)
 	{
-		if (SHOW_IMAGE)
+		if (ph->g_nShowImage)
 		{
 			temp.Format(_T("%s\\defect_image"), ph->m_strPath);
 			CreateDirectory(temp, NULL);
@@ -395,7 +422,34 @@ DWORD CALLBACK ProcThread(LPVOID pParam)
 
 extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
 {
+	g_hProc.g_nShowImage = 0;
+
+	HKEY key;
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\AI_Interface_DLL"), 0, KEY_ALL_ACCESS, &key) != ERROR_SUCCESS)
+	{
+		DWORD value = 0;
+
+		RegCreateKey(HKEY_CURRENT_USER, _T("Software\\AI_Interface_DLL"), &key);
+		RegSetValueEx(key, _T("ShowImage"), 0, REG_DWORD, (const BYTE*)&value, sizeof(value));
+	}
+	else
+	{
+		DWORD dwType = REG_DWORD, dwData = 0;
+		DWORD cbData = sizeof(dwData);
+
+		RegQueryValueEx(key, _T("ShowImage"), NULL, &dwType, (LPBYTE)&dwData, &cbData);
+
+		g_hProc.g_nShowImage = dwData;
+	}
+
+	RegCloseKey(key);
+
 	g_hProc.m_strPath = CA2CT((char*)ng_path);
+
+	if (g_hProc.m_strPath.GetLength() < 1)
+	{
+		return -1;
+	}
 
 	if (g_hProc.m_strPath.GetAt(g_hProc.m_strPath.GetLength() - 1) == _T('\\'))
 	{
