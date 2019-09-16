@@ -34,7 +34,14 @@
 #include <afxcontrolbars.h>     // MFC의 리본 및 컨트롤 막대 지원
 
 
-#pragma comment (lib, "AIInterfaceDll.lib")
+//#pragma comment (lib, "AIInterfaceDll.lib")
+
+#ifdef _x64
+//#pragma comment (lib, "D:\\My_Project\\검사장비\\AIInterfaceDll\\x64\\Verify_AI.lib")
+#pragma comment (lib, ".\\AIInterfaceDll_Lib\\x64\\AIInterfaceDll.lib")
+#else
+#pragma comment (lib, ".\\AIInterfaceDll_Lib\\x86\\AIInterfaceDll.lib")
+#endif
 
 extern "C" __declspec(dllexport) int GetAIResult(unsigned char *ng_path);
 

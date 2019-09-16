@@ -39,8 +39,14 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <atlimage.h>
+//#include "verify_ai.h"
 
-#pragma comment (lib, "TestDll.lib")
+#ifdef _x64
+//#pragma comment (lib, "D:\\My_Project\\검사장비\\AIInterfaceDll\\x64\\Verify_AI.lib")
+#pragma comment (lib, ".\\AI_Lib\\x64\\Verify_AI.lib")
+#else
+#pragma comment (lib, ".\\AI_Lib\\x86\\Verify_AI.lib")
+#endif
 
 
 #define	IMAGE_WIDTH					200
@@ -49,4 +55,10 @@
 
 #define WIDTHBYTES(bits)			(((bits)+31)/32*4)  // 4바이트 배수
 
-extern "C" __declspec(dllexport) int Sum(int, int);
+//extern "C" __declspec(dllexport) int Sum(int, int);
+
+// 리턴값 : -1 에러(처리를 못함)
+//        :  0 NG이미지
+//		  :  1 OK이미지
+extern "C" __declspec(dllexport) int AI_FOR_VERIFY_201909(	unsigned char *master_raw,    // master raw 포인터(200*600)
+															unsigned char *defect_raw);   // defect raw 포인터(200*600)

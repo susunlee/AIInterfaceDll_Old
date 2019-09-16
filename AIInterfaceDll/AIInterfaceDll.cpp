@@ -11,7 +11,7 @@
 
 #define DLLEXPORT
 
-#define	SHOW_IMAGE					1
+#define	SHOW_IMAGE					0
 
 int GetNGCount(CString f_name)
 {
@@ -217,7 +217,12 @@ int ProcAI(_NG_FILE_INFO *ni, CString src_csv, CString target_scan, CString targ
 		//////////////////////////////////////////////////////////////////////
 		//
 		//           AI 함수 호출 후 결과 저장
-		msg.Format(_T("%d"), Sum(i + 1, 0));
+		//msg.Format(_T("%d"), Sum(i + 1, 0));
+		msg.Format(_T("%d"), AI_FOR_VERIFY_201909(tmp_master, tmp_scan));
+		//if (msg.Compare(_T("1")) == 0)
+		//{
+		//	AfxMessageBox(_T("1"));
+		//}
 		ni->ai_result.Add(msg);
 		//
 		//////////////////////////////////////////////////////////////////////
@@ -399,12 +404,13 @@ extern "C" AIINTERFACEDLLTYPE int GetAIResult(unsigned char *ng_path)
 
 	HANDLE h = CreateThread(NULL, 0, ProcThread, &g_hProc, 0, NULL);
 
-	DWORD dw = WaitForSingleObject(h, INFINITE); //
-	if (dw == WAIT_FAILED)
-	{
-		//puts("thread error");
-		//return 0;
-	}
+	WaitForSingleObject(h, INFINITE);
+	//DWORD dw = WaitForSingleObject(h, INFINITE);
+	//if (dw == WAIT_FAILED)
+	//{
+	//	//puts("thread error");
+	//	//return 0;
+	//}
 
 
 	return 1;
