@@ -1,5 +1,7 @@
 #pragma once
 
+#include <afxmt.h>
+
 #define AIINTERFACEDLLTYPE __declspec(dllexport)
 
 ////////////////////////////////////////////////////////////
@@ -14,13 +16,14 @@ struct _NG_FILE_INFO
 
 typedef struct _PROC_HANDLE
 {
-	int			g_nShowImage;
-	CString		m_strPath;
-	CPtrList	m_listNG;
+	int				show_image;
+	CString			ng_path;
+	CPtrList		ng_list;
 
 } PROC_HANDLE;
 
-PROC_HANDLE		g_hProc;
+PROC_HANDLE			g_hProc;
+CCriticalSection	g_hCS;
 
 ////////////////////////////////////////////////////////////
 

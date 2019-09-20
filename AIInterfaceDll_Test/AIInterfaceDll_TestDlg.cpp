@@ -209,10 +209,17 @@ void CAIInterfaceDllTestDlg::OnBnClickedOk()
 	char path[1024] = { 0, };
 	Uni2Ansi(m_strPath, path, m_strPath.GetLength() * 2);
 
+	CTime t1 = CTime::GetCurrentTime();
 	if (GetAIResult((BYTE*)path) == 1)
 	{
 
 	}
+
+	CTime t2 = CTime::GetCurrentTime();
+	CTimeSpan ts = t2 - t1;
+	CString msg;
+
+	msg.Format(_T("finished.(run time: %02ld sec)"), ts.GetTotalSeconds());
 	
-	AfxMessageBox(_T("finished."));
+	AfxMessageBox(msg);
 }
